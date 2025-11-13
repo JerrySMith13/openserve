@@ -1,0 +1,15 @@
+--- General Layout for database ---
+For both pending submissions and accepted submissions, we have a singular table
+Each table is created like so:
+
+CREATE TABLE <status>_submissions(
+    rowid INT PRIMARY KEY,
+    student_email TEXT NOT NULL,
+    start_time INTEGER NOT NULL,
+    num_qtr_hours INTEGER NOT NULL,
+    supervisor_email INTEGER NOT NULL,
+    location TEXT NOT NULL,
+    organization TEXT NOT NULL,
+    service_type TEXT NOT NULL,
+    status INTEGER NOT NULL
+);
