@@ -1,6 +1,7 @@
 import sqlite3
 import os
 from enum import Enum
+from err import panic
 HOURS_DB_PATH = os.getenv("HOURS_DB_PATH")
 PENDING_DB_PATH = os.getenv("PENDING_DB_PATH")
 
@@ -14,7 +15,7 @@ class DbContext:
     pending_conn: sqlite3.Connection
     def __init__(self):
         if HOURS_DB_PATH == None or PENDING_DB_PATH == None:
-            exit(-1)
+            panic(-1, "Db path variables not set")
         else:
             self.hours_conn = sqlite3.connect(HOURS_DB_PATH)
             self.pending_conn = sqlite3.connect(PENDING_DB_PATH)
