@@ -1,6 +1,5 @@
 import sqlite3
 import os
-import time
 from enum import Enum
 HOURS_DB_PATH = os.getenv("HOURS_DB_PATH")
 PENDING_DB_PATH = os.getenv("PENDING_DB_PATH")
@@ -37,15 +36,17 @@ class DbContext:
         return submission
         
     def insert_new_sub(self, submission: Submission):
-        cursor = self.pending_conn.execute("INSERT INTO pending_submissions VALUES(:student_email, :start_time, :num_qtr_hours, :supervisor_email, :location, :organization, :service_type, :status)")
-    
-    def submit(self, approved: bool, id: int):
-        if not approved:
-            pass
-        cursor = self.pending_conn.cursor()
-        
+        cursor = self.pending_conn.execute("INSERT INTO pending_submissions VALUES(:student_email, :start_time, :num_qtr_hours, :supervisor_email, :location, :organization, :service_type, :status)", submission.into_named())
 
-        
+        cursor.close()
+    def submit(self, approved: bool, id: int):
+        #Possible optimization by using single cursor here rather than making two for same db
+        submission = self.get_pending_submission(id)
+        self.pending_conn.execute(f"DELETE FROM pending_submissions WHERE rowid={id}")
+        if approved:
+            cursor = self.hours_conn.execute("INSERT INTO pending_submissions VALUES(:student_email, :start_time, :num_qtr_hours, :supervisor_email, :location, :organization, :service_type, :status)", submission.into_named())
+            cursor.close()
+    
 
 class Submission:
     id: int #Primary key for locating within whichever database it may be in
@@ -93,7 +94,7 @@ class Submission:
             "location": self.location,
             "organization": self.organization,
             "service_type": self.service_type,
-            "status": self.status.value
+            "status": int(self.status.value)
         }
 
 #multiple ways to submit:
