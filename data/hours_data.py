@@ -10,44 +10,6 @@ class Status(Enum):
     Rejected = 1
     Pending = 2
 
-class DbContext:
-    hours_conn: sqlite3.Connection
-    pending_conn: sqlite3.Connection
-    def __init__(self):
-        if HOURS_DB_PATH == None or PENDING_DB_PATH == None:
-            panic(-1, "Db path variables not set")
-        else:
-            self.hours_conn = sqlite3.connect(HOURS_DB_PATH)
-            self.pending_conn = sqlite3.connect(PENDING_DB_PATH)
-    
-    def close(self):
-        self.hours_conn.close()
-        self.pending_conn.close()
-
-    def get_pending_submission(self, id: int):
-        cursor = self.pending_conn.execute(f"SELECT * FROM pending_submissions WHERE rowid={id}")
-        submission = Submission(cursor.fetchone())
-        cursor.close()
-        return submission
-        
-    def get_approved_submission(self, id: int):
-        cursor = self.hours_conn.execute(f"SELECT * FROM pending_submissions WHERE rowid={id}")
-        submission = Submission(cursor.fetchone())
-        cursor.close()
-        return submission
-        
-    def insert_new_sub(self, submission: Submission):
-        cursor = self.pending_conn.execute("INSERT INTO pending_submissions VALUES(:student_email, :start_time, :num_qtr_hours, :supervisor_email, :location, :organization, :service_type, :status)", submission.into_named())
-
-        cursor.close()
-    def submit(self, approved: bool, id: int):
-        #Possible optimization by using single cursor here rather than making two for same db
-        submission = self.get_pending_submission(id)
-        self.pending_conn.execute(f"DELETE FROM pending_submissions WHERE rowid={id}")
-        if approved:
-            cursor = self.hours_conn.execute("INSERT INTO pending_submissions VALUES(:student_email, :start_time, :num_qtr_hours, :supervisor_email, :location, :organization, :service_type, :status)", submission.into_named())
-            cursor.close()
-    
 
 class Submission:
     id: int #Primary key for locating within whichever database it may be in
@@ -97,6 +59,47 @@ class Submission:
             "service_type": self.service_type,
             "status": int(self.status.value)
         }
+
+
+class DbContext:
+    hours_conn: sqlite3.Connection
+    pending_conn: sqlite3.Connection
+    def __init__(self):
+        if HOURS_DB_PATH == None or PENDING_DB_PATH == None:
+            panic(-1, "Db path variables not set")
+        else:
+            self.hours_conn = sqlite3.connect(HOURS_DB_PATH)
+            self.pending_conn = sqlite3.connect(PENDING_DB_PATH)
+    
+    def close(self):
+        self.hours_conn.close()
+        self.pending_conn.close()
+
+    def get_pending_submission(self, id: int):
+        cursor = self.pending_conn.execute(f"SELECT * FROM pending_submissions WHERE rowid={id}")
+        submission = Submission(cursor.fetchone())
+        cursor.close()
+        return submission
+        
+    def get_approved_submission(self, id: int):
+        cursor = self.hours_conn.execute(f"SELECT * FROM pending_submissions WHERE rowid={id}")
+        submission = Submission(cursor.fetchone())
+        cursor.close()
+        return submission
+        
+    def insert_new_sub(self, submission: Submission):
+        cursor = self.pending_conn.execute("INSERT INTO pending_submissions VALUES(:student_email, :start_time, :num_qtr_hours, :supervisor_email, :location, :organization, :service_type, :status)", submission.into_named())
+
+        cursor.close()
+    def submit(self, approved: bool, id: int):
+        #Possible optimization by using single cursor here rather than making two for same db
+        submission = self.get_pending_submission(id)
+        self.pending_conn.execute(f"DELETE FROM pending_submissions WHERE rowid={id}")
+        if approved:
+            cursor = self.hours_conn.execute("INSERT INTO pending_submissions VALUES(:student_email, :start_time, :num_qtr_hours, :supervisor_email, :location, :organization, :service_type, :status)", submission.into_named())
+            cursor.close()
+    
+
 
 #multiple ways to submit:
 '''
